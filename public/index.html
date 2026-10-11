@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Assessment Platform • Developed by Gururaj Surampalli</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- CDNs for Three.js 3D Background, jsPDF, and Confetti -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <!-- Background 3D Canvas -->
+  <div id="three-canvas-container"></div>
+  <div class="depth-grid-overlay"></div>
+
+  <!-- Main App Shell -->
+  <div class="app-container">
+    
+    <!-- Navigation Bar -->
+    <header class="navbar-3d">
+      <div class="nav-content">
+        <div class="brand-wrapper" onclick="App.checkAuth()">
+          <div class="brand-icon-3d">🔮</div>
+          <div class="brand-titles">
+            <span class="brand-title">QUIZ MASTER</span>
+            <span class="brand-author-badge">
+              <span>✦</span> Engineered by <span class="dev-name">Gururaj Surampalli</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="nav-actions">
+          <div class="author-pill-3d" id="nav-author-pill">
+            <span>✨</span>
+            <span>Developed by Gururaj Surampalli</span>
+          </div>
+          <div id="nav-user-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+            <!-- Populated dynamically by App.setUser() -->
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Views -->
+    <main class="main-view-area">
+
+      <!-- ======================================================== -->
+      <!-- VIEW 1: AUTHENTICATION (STUDENT / ADMIN / REGISTER)      -->
+      <!-- ======================================================== -->
+      <section id="view-auth" class="view-section active">
+        <div class="auth-wrapper">
+          <div class="card-3d tilt-card">
+            <div class="auth-header">
+              <div class="auth-badge-icon">⚡</div>
+              <h2 class="auth-title">Quiz Assessment Portal</h2>
+              <p class="auth-subtitle">Academic & Aptitude Evaluation System</p>
+            </div>
+
+            <!-- Login / Register Switch Tabs -->
+            <div class="auth-tabs">
+              <button id="tab-btn-student" class="auth-tab-btn active" onclick="App.showAuthTab('student')">Student Login</button>
+              <button id="tab-btn-register" class="auth-tab-btn" onclick="App.showAuthTab('register')">New Student</button>
+              <button id="tab-btn-admin" class="auth-tab-btn" onclick="App.showAuthTab('admin')">Admin Access</button>
+            </div>
+
+            <!-- Student Login Form -->
+            <div id="student-login-container">
+              <form id="student-login-form" onsubmit="event.preventDefault(); App.login(document.getElementById('student-username').value, document.getElementById('student-password').value);">
+                <div class="form-group">
+                  <label class="form-label" for="student-username">Student Username</label>
+                  <input type="text" id="student-username" class="form-control-3d" placeholder="Enter your username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="student-password">Password</label>
+                  <input type="password" id="student-password" class="form-control-3d" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-3d btn-3d-primary" style="width: 100%; margin-top: 0.5rem;">
+                  Sign In as Student 🚀
+                </button>
+              </form>
+
+              <!-- Student Demo Credentials Box -->
+              <div class="demo-credentials-box">
+                <div class="demo-title">
+                  <span>🎓 Quick Student Demo</span>
+                  <span style="font-size: 0.72rem; color: var(--text-dim);">Click to autofill</span>
+                </div>
+                <div class="demo-chips">
+                  <button type="button" class="demo-chip-btn" onclick="document.getElementById('student-username').value='student'; document.getElementById('student-password').value='User@123';">
+                    🎓 Fill Demo Student (User@123)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Student Registration Form with USN & Semester -->
+            <div id="register-form-container" style="display: none;">
+              <form id="register-form" onsubmit="event.preventDefault(); App.register(document.getElementById('reg-username').value, document.getElementById('reg-password').value, document.getElementById('reg-fullname').value, document.getElementById('reg-usn').value, document.getElementById('reg-semester').value);">
+                <div class="form-group">
+                  <label class="form-label" for="reg-fullname">Full Name</label>
+                  <input type="text" id="reg-fullname" class="form-control-3d" placeholder="e.g. Ramesh Kumar" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.75rem;">
+                  <div class="form-group">
+                    <label class="form-label" for="reg-usn">USN / Roll Number</label>
+                    <input type="text" id="reg-usn" class="form-control-3d" placeholder="e.g. 1EC21EC045" required style="text-transform: uppercase;">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="reg-semester">Semester</label>
+                    <select id="reg-semester" class="form-control-3d" required>
+                      <option value="1st Semester">1st Semester</option>
+                      <option value="2nd Semester">2nd Semester</option>
+                      <option value="3rd Semester">3rd Semester</option>
+                      <option value="4th Semester">4th Semester</option>
+                      <option value="5th Semester">5th Semester</option>
+                      <option value="6th Semester" selected>6th Semester</option>
+                      <option value="7th Semester">7th Semester</option>
+                      <option value="8th Semester">8th Semester</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="reg-username">Choose Username</label>
+                  <input type="text" id="reg-username" class="form-control-3d" placeholder="e.g. ramesh_k" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="reg-password">Choose Password</label>
+                  <input type="password" id="reg-password" class="form-control-3d" placeholder="At least 4 characters" required autocomplete="new-password">
+                </div>
+
+                <button type="submit" class="btn-3d btn-3d-cyan" style="width: 100%; margin-top: 0.5rem;">
+                  Register Student Account ✨
+                </button>
+              </form>
+            </div>
+
+            <!-- Restricted Admin Login Form (Not open) -->
+            <div id="admin-login-container" style="display: none;">
+              <div style="margin-bottom: 1rem; padding: 0.65rem 0.85rem; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; font-size: 0.82rem; color: #d8b4fe;">
+                🔒 <strong>Restricted Administrator Access</strong><br>
+                This portal is strictly reserved for authorized management.
+              </div>
+              <form id="admin-login-form" onsubmit="event.preventDefault(); App.login(document.getElementById('admin-username').value, document.getElementById('admin-password').value);">
+                <div class="form-group">
+                  <label class="form-label" for="admin-username">Admin Username</label>
+                  <input type="text" id="admin-username" class="form-control-3d" placeholder="Enter admin username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="admin-password">Admin Password</label>
+                  <input type="password" id="admin-password" class="form-control-3d" placeholder="Enter admin password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-3d btn-3d-primary" style="width: 100%; margin-top: 0.5rem; background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);">
+                  Admin Sign In 🛡️
+                </button>
+              </form>
+            </div>
+            
+            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.78rem; color: var(--text-dim);">
+              Developed by Gururaj Surampalli
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 2: USER DASHBOARD & BRIEFING                        -->
+      <!-- ======================================================== -->
+      <section id="view-user-dashboard" class="view-section">
+        <div class="card-3d hero-quiz-card tilt-card">
+          <div class="hero-info">
+            <div class="brand-author-badge" style="margin-bottom: 0.75rem;">
+              <span>⚡</span> INTERACTIVE EVALUATION
+            </div>
+            <h1 id="dash-quiz-title">Comprehensive Assessment Quiz</h1>
+            <p id="dash-quiz-desc">Evaluate aptitude, logical reasoning, general science, and quantitative proficiency.</p>
+
+            <div class="quiz-meta-grid">
+              <div class="meta-pill-3d">
+                <span class="meta-val" id="dash-meta-questions">20</span>
+                <span class="meta-label">Questions</span>
+              </div>
+              <div class="meta-pill-3d">
+                <span class="meta-val" id="dash-meta-time">15 Mins</span>
+                <span class="meta-label">Time Limit</span>
+              </div>
+              <div class="meta-pill-3d">
+                <span class="meta-val" id="dash-meta-passing">60%</span>
+                <span class="meta-label">Pass Score</span>
+              </div>
+              <div class="meta-pill-3d">
+                <span class="meta-val" id="dash-meta-best" style="color: #34d399;">--</span>
+                <span class="meta-label">Your Best</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+              <button class="btn-3d btn-3d-primary btn-lg" onclick="App.startQuiz()">
+                🚀 Start Quiz Now
+              </button>
+              <div class="author-pill-3d" style="align-self: center;">
+                <span>🛡️</span> Answer order randomized per user
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-3d-graphic">
+            <div class="floating-3d-emblem">🎯</div>
+            <div style="margin-top: 1.5rem; text-align: center;">
+              <div style="font-weight: 700; color: #c7d2fe;">Randomized Session</div>
+              <div style="font-size: 0.8rem; color: var(--text-dim);">Options shuffled for each candidate</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Past Attempts History Table -->
+        <div class="card-3d">
+          <h3 style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+            <span>📜 Your Previous Attempts</span>
+            <span style="font-size: 0.8rem; color: var(--text-dim); font-weight: normal;">Recorded in SQLite Database</span>
+          </h3>
+          <div class="table-responsive">
+            <table class="table-3d">
+              <thead>
+                <tr>
+                  <th>Attempt ID</th>
+                  <th>Points</th>
+                  <th>Percentage</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th>Date & Time</th>
+                </tr>
+              </thead>
+              <tbody id="my-attempts-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 3: ACTIVE QUIZ RUNNER                               -->
+      <!-- ======================================================== -->
+      <section id="view-active-quiz" class="view-section">
+        <div class="quiz-active-header">
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #ffffff;">Assessment in Progress</h2>
+            <div style="font-size: 0.82rem; color: var(--text-muted);">Answer options are shuffled for your session</div>
+          </div>
+          
+          <!-- Live Countdown Timer -->
+          <div id="quiz-timer-box" class="timer-box-3d">
+            <span class="timer-icon">⏳</span>
+            <div>
+              <div style="font-size: 0.68rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">Remaining Time</div>
+              <div id="quiz-timer-val" class="timer-val">15:00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Track -->
+        <div class="progress-3d-track">
+          <div id="quiz-progress-fill" class="progress-3d-fill"></div>
+        </div>
+
+        <!-- Quiz Runner Grid: Question Card & Question Navigation Drawer -->
+        <div class="quiz-runner-grid">
+          <!-- Active Question Card -->
+          <div class="question-card-3d">
+            <div id="active-q-badge" class="question-badge-num">Question 1 of 20</div>
+            <h3 id="active-q-text" class="question-main-text">Loading question text...</h3>
+
+            <!-- Randomized Option Tiles -->
+            <div id="active-q-options" class="options-list">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Question Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+              <button id="btn-prev-q" class="btn-3d btn-3d-glass" onclick="App.prevQuestion()">
+                ⬅️ Previous
+              </button>
+              <div style="display: flex; gap: 0.75rem;">
+                <button class="btn-3d btn-3d-danger btn-sm" onclick="App.openSubmitConfirmModal()">
+                  Finish Early
+                </button>
+                <button id="btn-next-q" class="btn-3d btn-3d-primary" onclick="App.nextQuestion()">
+                  Next Question ➡️
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Question Grid Navigation Drawer -->
+          <div class="quiz-nav-drawer">
+            <div class="drawer-title">
+              <span>Question Palette</span>
+              <span id="drawer-stats-summary" style="font-size: 0.75rem; color: var(--accent-cyan); font-weight: 600;">0/20 Answered</span>
+            </div>
+            
+            <div id="drawer-bubbles-grid" class="question-bubbles-grid">
+              <!-- Dynamically populated bubbles 1..N -->
+            </div>
+
+            <div class="drawer-legend">
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--primary);"></span>
+                <span>Current Question</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--success);"></span>
+                <span>Answered</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-glass);"></span>
+                <span>Unanswered</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 4: RESULTS & SCORE CELEBRATION                      -->
+      <!-- ======================================================== -->
+      <section id="view-results" class="view-section">
+        <div class="card-3d results-hero-card tilt-card">
+          <div id="result-trophy-elem" class="result-3d-trophy pass">🏆</div>
+          <div id="result-status-pill" class="result-pill-status pass">🎉 Passed!</div>
+          <div id="result-score-val" class="score-big-display pass">85%</div>
+          <div style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 1.5rem;">Your Assessment Score</div>
+
+          <div class="result-metrics-row">
+            <div class="meta-pill-3d">
+              <span class="meta-val" id="result-meta-points">17 / 20</span>
+              <span class="meta-label">Total Points</span>
+            </div>
+            <div class="meta-pill-3d">
+              <span class="meta-val" id="result-meta-time">8m 42s</span>
+              <span class="meta-label">Time Spent</span>
+            </div>
+            <div class="meta-pill-3d">
+              <span class="meta-val" id="result-meta-passing">60%</span>
+              <span class="meta-label">Pass Benchmark</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-3d btn-3d-primary" onclick="App.startQuiz()">
+              🔄 Retake Quiz
+            </button>
+            <button class="btn-3d btn-3d-cyan" onclick="App.loadUserDashboard()">
+              📊 Back to Dashboard
+            </button>
+          </div>
+        </div>
+
+        <!-- Detailed Question Review Accordion -->
+        <div style="max-width: 800px; margin: 0 auto;">
+          <h3 style="margin-bottom: 1rem; color: #ffffff;">Detailed Question Analysis</h3>
+          <div id="result-breakdown-list" class="result-breakdown-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 5: ADMIN DASHBOARD & CONTROLS                       -->
+      <!-- ======================================================== -->
+      <section id="view-admin" class="view-section">
+        <div class="admin-header-bar">
+          <div>
+            <h2 style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">Admin Management Center</h2>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              Configure Quiz Duration, Modify Questions & Export Scores to PDF
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <button class="btn-3d btn-3d-cyan btn-sm" onclick="App.exportScoresToPdf('client')">
+              📄 Export PDF (Styled)
+            </button>
+            <button class="btn-3d btn-3d-primary btn-sm" onclick="App.exportScoresToPdf('server')">
+              📥 Export PDF (Server)
+            </button>
+            <button class="btn-3d btn-3d-success btn-sm" onclick="App.openAddQuestionModal()">
+              ➕ Add Question
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin Navigation Tabs -->
+        <div class="admin-nav-tabs">
+          <button id="btn-admin-tab-scores" class="admin-tab-btn active" onclick="App.showAdminTab('scores')">
+            📊 Scores & Analytics
+          </button>
+          <button id="btn-admin-tab-questions" class="admin-tab-btn" onclick="App.showAdminTab('questions')">
+            📝 Question Manager
+          </button>
+          <button id="btn-admin-tab-settings" class="admin-tab-btn" onclick="App.showAdminTab('settings')">
+            ⚙️ Quiz Settings & Time
+          </button>
+        </div>
+
+        <!-- TAB 1: SCORES & ANALYTICS -->
+        <div id="admin-tab-scores" class="admin-tab-pane" style="display: block;">
+          <!-- Metrics Cards -->
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TOTAL ATTEMPTS</div>
+              <div class="val" id="stat-total-attempts" style="color: #38bdf8;">0</div>
+            </div>
+            <div class="admin-stat-card">
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">PASS RATE</div>
+              <div class="val" id="stat-pass-rate" style="color: #10b981;">0%</div>
+            </div>
+            <div class="admin-stat-card">
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">AVERAGE SCORE</div>
+              <div class="val" id="stat-avg-score" style="color: #818cf8;">0%</div>
+            </div>
+            <div class="admin-stat-card">
+              <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">TOP SCORE</div>
+              <div class="val" id="stat-top-score" style="color: #f59e0b;">0%</div>
+            </div>
+          </div>
+
+          <!-- Scores Table -->
+          <div class="card-3d" style="padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h3 style="font-size: 1.15rem; color: #ffffff;">Student Assessment Records</h3>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-3d btn-3d-cyan btn-sm" onclick="App.exportScoresToPdf('client')">
+                  📄 Download PDF Report
+                </button>
+                <button class="btn-3d btn-3d-glass btn-sm" onclick="App.loadAdminAttempts()">
+                  🔄 Refresh
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table-3d">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Candidate Name</th>
+                    <th>USN</th>
+                    <th>Semester</th>
+                    <th>Username</th>
+                    <th>Points</th>
+                    <th>Percentage</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-scores-tbody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: QUESTION MANAGER -->
+        <div id="admin-tab-questions" class="admin-tab-pane" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h3 style="color: #ffffff;">Quiz Questions Pool</h3>
+              <span id="admin-questions-count-badge" class="role-tag user">0 Questions</span>
+            </div>
+            <button class="btn-3d btn-3d-success" onclick="App.openAddQuestionModal()">
+              ➕ Add New Question
+            </button>
+          </div>
+
+          <div id="admin-questions-list">
+            <!-- Dynamically populated question cards -->
+          </div>
+        </div>
+
+        <!-- TAB 3: QUIZ SETTINGS & TIME LIMIT -->
+        <div id="admin-tab-settings" class="admin-tab-pane" style="display: none;">
+          <div class="card-3d" style="max-width: 720px; margin: 0 auto;">
+            <h3 style="margin-bottom: 1.5rem; color: #ffffff;">Modify Quiz Parameters & Timer</h3>
+            
+            <div class="form-group">
+              <label class="form-label" for="input-quiz-title">Quiz Title</label>
+              <input type="text" id="input-quiz-title" class="form-control-3d" placeholder="e.g. Comprehensive Assessment Quiz">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="input-quiz-desc">Quiz Description</label>
+              <textarea id="input-quiz-desc" class="form-control-3d" rows="3" placeholder="Enter instructions or summary"></textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="input-quiz-time">⏱️ Time Limit (Minutes)</label>
+                <input type="number" id="input-quiz-time" class="form-control-3d" min="1" max="300" value="15">
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem;">
+                  Quiz will automatically submit when this timer expires.
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-quiz-passing">🎯 Passing Score (%)</label>
+                <input type="number" id="input-quiz-passing" class="form-control-3d" min="0" max="100" value="60">
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem;">
+                  Minimum score percentage required to pass.
+                </div>
+              </div>
+            </div>
+
+            <div style="margin: 1.25rem 0; padding: 1rem; background: rgba(15,23,42,0.6); border: 1px solid var(--border-glass); border-radius: 12px;">
+              <div style="font-weight: 700; color: #38bdf8; margin-bottom: 0.75rem;">🔀 Anti-Cheat Randomization Settings</div>
+              <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                <input type="checkbox" id="check-random-options" checked style="accent-color: var(--primary); width: 18px; height: 18px;">
+                <span>Randomize Answer Order For Each User (Shuffles A, B, C, D)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.9rem;">
+                <input type="checkbox" id="check-random-questions" checked style="accent-color: var(--primary); width: 18px; height: 18px;">
+                <span>Randomize Question Sequence For Each User</span>
+              </label>
+            </div>
+
+            <button class="btn-3d btn-3d-primary btn-lg" onclick="App.saveAdminSettings()" style="width: 100%;">
+              💾 Save Quiz Configuration
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer with "Developed by Gururaj Surampalli" -->
+    <footer class="footer-3d">
+      <div class="footer-content">
+        <div class="footer-credits">
+          <span>🔮</span>
+          <span>Crafted with Precision • Developed by <span class="footer-author-highlight">Gururaj Surampalli</span></span>
+        </div>
+        <div class="footer-features-pills">
+          <span class="badge-feature">SQLite ACID Engine</span>
+          <span class="badge-feature">Randomized Answer Order</span>
+          <span class="badge-feature">PDF Export Ready</span>
+          <span class="badge-feature">Timer Auto-Submit</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ADD / EDIT QUESTION (ADMIN)                       -->
+  <!-- ======================================================== -->
+  <div id="modal-question-editor" class="modal-overlay">
+    <div class="modal-content-3d">
+      <h3 id="modal-q-title" style="margin-bottom: 1.25rem; color:#ffffff;">Add / Edit Question</h3>
+      
+      <div class="form-group">
+        <label class="form-label">Question Text</label>
+        <textarea id="form-question-text" class="form-control-3d" rows="3" placeholder="Enter question text"></textarea>
+      </div>
+
+      <!-- 4 Options with Direct Interactive Correct-Answer Selection -->
+      <div style="margin-bottom: 1.25rem;">
+        <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Answer Options (Edit text & click "Mark Correct" for the right answer)</span>
+          <span style="font-size:0.75rem; color:#38bdf8;">Green badge indicates correct answer</span>
+        </label>
+
+        <!-- Option A -->
+        <div class="option-edit-row" id="row-opt-a">
+          <div class="option-edit-badge" onclick="App.setCorrectOption('A')">A</div>
+          <input type="text" id="form-option-a" class="form-control-3d" placeholder="Option A text" required>
+          <button type="button" class="mark-correct-btn" onclick="App.setCorrectOption('A')">
+            <span id="badge-lbl-a">Mark Correct</span>
+          </button>
+        </div>
+
+        <!-- Option B -->
+        <div class="option-edit-row" id="row-opt-b">
+          <div class="option-edit-badge" onclick="App.setCorrectOption('B')">B</div>
+          <input type="text" id="form-option-b" class="form-control-3d" placeholder="Option B text" required>
+          <button type="button" class="mark-correct-btn" onclick="App.setCorrectOption('B')">
+            <span id="badge-lbl-b">Mark Correct</span>
+          </button>
+        </div>
+
+        <!-- Option C -->
+        <div class="option-edit-row" id="row-opt-c">
+          <div class="option-edit-badge" onclick="App.setCorrectOption('C')">C</div>
+          <input type="text" id="form-option-c" class="form-control-3d" placeholder="Option C text" required>
+          <button type="button" class="mark-correct-btn" onclick="App.setCorrectOption('C')">
+            <span id="badge-lbl-c">Mark Correct</span>
+          </button>
+        </div>
+
+        <!-- Option D -->
+        <div class="option-edit-row" id="row-opt-d">
+          <div class="option-edit-badge" onclick="App.setCorrectOption('D')">D</div>
+          <input type="text" id="form-option-d" class="form-control-3d" placeholder="Option D text" required>
+          <button type="button" class="mark-correct-btn" onclick="App.setCorrectOption('D')">
+            <span id="badge-lbl-d">Mark Correct</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Correct Option Dropdown</label>
+          <select id="form-correct-option" class="form-control-3d" onchange="App.setCorrectOption(this.value)">
+            <option value="A">Option A</option>
+            <option value="B">Option B</option>
+            <option value="C">Option C</option>
+            <option value="D">Option D</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Points Awarded</label>
+          <input type="number" id="form-points" class="form-control-3d" min="1" max="100" value="1">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Explanation / Rationale (Optional)</label>
+        <textarea id="form-explanation" class="form-control-3d" rows="2" placeholder="Explain why the answer is correct"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <button class="btn-3d btn-3d-glass" onclick="App.closeQuestionModal()">
+          Cancel
+        </button>
+        <button class="btn-3d btn-3d-primary" onclick="App.saveQuestion()">
+          Save Question 💾
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: SUBMISSION CONFIRMATION                           -->
+  <!-- ======================================================== -->
+  <div id="modal-submit-confirm" class="modal-overlay">
+    <div class="modal-content-3d" style="max-width: 480px; text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">📋</div>
+      <h3 style="margin-bottom: 0.75rem; color: #ffffff;">Submit Assessment?</h3>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+        Are you ready to submit your answers? You cannot change your choices once submitted.
+      </p>
+
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.5rem;">
+        <div class="meta-pill-3d" style="flex: 1;">
+          <span class="meta-val" id="submit-modal-answered" style="color: #10b981;">0</span>
+          <span class="meta-label">Answered</span>
+        </div>
+        <div class="meta-pill-3d" style="flex: 1;">
+          <span class="meta-val" id="submit-modal-unanswered" style="color: #ef4444;">0</span>
+          <span class="meta-label">Unanswered</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button class="btn-3d btn-3d-glass" onclick="App.closeSubmitConfirmModal()">
+          Keep Reviewing
+        </button>
+        <button class="btn-3d btn-3d-success" onclick="App.submitQuiz()">
+          Confirm & Submit 🚀
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: VIEW ATTEMPT DETAILS (ADMIN)                      -->
+  <!-- ======================================================== -->
+  <div id="modal-attempt-viewer" class="modal-overlay">
+    <div class="modal-content-3d" style="max-width: 720px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.75rem;">
+        <div>
+          <h3 id="modal-attempt-user" style="color: #ffffff;">Candidate Attempt Details</h3>
+          <div id="modal-attempt-sub" style="font-size: 0.85rem; color: var(--text-dim);">Detailed inspection</div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <span id="modal-attempt-score" style="font-weight: 800; font-size: 1.1rem; color: #38bdf8;"></span>
+          <span id="modal-attempt-status"></span>
+        </div>
+      </div>
+
+      <div id="modal-attempt-breakdown" style="max-height: 50vh; overflow-y: auto; margin-bottom: 1.25rem;">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <button id="btn-download-single-pdf" class="btn-3d btn-3d-cyan btn-sm">
+          📄 Download Candidate PDF Report
+        </button>
+        <button class="btn-3d btn-3d-glass btn-sm" onclick="App.closeAttemptDetailModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Application Logic Scripts -->
+  <script src="/js/three-bg.js"></script>
+  <script src="/js/pdf-export.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
